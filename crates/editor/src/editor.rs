@@ -1,7 +1,12 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
+
 use buffer::buffer::Buffer;
 use utils::Position;
+
 use crate::cursor::Cursor;
+use crate::errors::EditorError;
+
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -30,7 +35,7 @@ impl Editor {
         }
     }
 
-    pub fn create_buffer(&mut self) {
+    pub fn create_empty_buffer(&mut self) {
         let id = Uuid::new_v4();
         let buffer = Buffer::new();
 
@@ -41,12 +46,36 @@ impl Editor {
         }
     }
 
+    pub fn create_buffer_from_file(&mut self, path: PathBuf) {
+        let id = Uuid::new_v4();
+        let buffer = Buffer::from_file(&path);
+
+        self.buffers.insert(id, buffer);
+
+        if self.current_buffer.is_none() {
+            self.current_buffer = Some(id);
+        }
+    }
+
+    pub fn save_buffer(&mut self) -> Result<(), EditorError> {
+        let buffer = self.get_current_buffer_mut().unwrap();
+
+        match buffer.save_to_file() {
+            Ok(_) => Ok(()),
+            Err(_) => Err(EditorError::SaveError) 
+        }
+    }
+
     pub fn get_current_buffer(&self) -> Option<&Buffer> {
         self.current_buffer.and_then(|id| self.buffers.get(&id))
     }
 
     pub fn get_current_buffer_mut(&mut self) -> Option<&mut Buffer> {
         self.current_buffer.and_then(|id| self.buffers.get_mut(&id))
+    }
+
+    pub fn change_mode(&mut self, mode: EditorMode) {
+        self.mode = mode;
     }
 
     pub fn move_cursor_left(&mut self) {

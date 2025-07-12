@@ -33,6 +33,7 @@ name = "editor"
 version = "0.1.0"
 dependencies = [
  "buffer",
+ "thiserror",
  "utils",
  "uuid",
 ]

@@ -6,5 +6,11 @@ pub enum BufferError {
     InvalidPosition {line: usize, column: usize},
 
     #[error("Invalid Range")]
-    InvalidRange
+    InvalidRange,
+
+    #[error("IO Error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("File not set")]
+    FileNotSet,
 }

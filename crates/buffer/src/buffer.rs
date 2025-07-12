@@ -1,15 +1,22 @@
+use std::path::PathBuf;
+use std::io::{Write, BufRead, BufReader};
+use std::fs::{File};
+use std::fs;
+
 use utils::{Range, Position};
 use crate::errors::BufferError;
 
 #[derive(Debug)]    
 pub struct Buffer {
     lines: Vec<String>,
+    file_path: Option<PathBuf>
 }
 
 impl Buffer {
     pub fn new() -> Self {
         Self {
             lines: vec![String::new()],
+            file_path: None
         }
     }
 
@@ -23,7 +30,39 @@ impl Buffer {
         };
 
         Self {
-            lines
+            lines,
+            file_path: None
+        }
+    }
+
+    pub fn from_file(path: &PathBuf) -> Self {
+        if !path.exists() {
+            if let Some(parent) = path.parent() {
+                let _ = fs::create_dir_all(parent);
+            } 
+
+            let _ = File::create(path);
+        }
+
+        let file = File::open(path).expect("Error opening file");
+        let buf = BufReader::new(file);
+        let lines: Vec<String> = buf.lines().map(|line| line.expect("Error parsing line")).collect();
+
+        Self {
+            lines,
+            file_path: Some(path.to_path_buf())
+        }
+    }
+
+    pub fn save_to_file(&self) -> Result<(), BufferError> {
+        if let Some(path) = &self.file_path {
+            let mut file = File::create(path).map_err(BufferError::IoError)?;
+            let content = self.lines.join("\n");
+            file.write_all(content.as_bytes()).map_err(BufferError::IoError)?;
+
+            Ok(())
+        } else {
+            Err(BufferError::FileNotSet)
         }
     }
 
