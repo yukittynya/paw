@@ -7,8 +7,9 @@ edition = "2024"
 members = [
     "crates/buffer",
     "crates/editor",
-    "crates/tui"
-, "crates/utils"]
+    "crates/tui", 
+    "crates/utils"
+]
 resolver = "2" 
 
 [dependencies]
