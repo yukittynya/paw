@@ -119,6 +119,25 @@ impl Buffer {
         }
     }
 
+    pub fn get_buffer(&self) -> String {
+        let mut result = String::new();
+
+        if self.len() == 1 {
+            result.push_str(&self.lines[0]);
+
+            return result;
+        }
+
+        for i in 0 .. self.len() - 1 {
+            result.push_str(&self.lines[i]);
+            result.push('\n')
+        }
+
+        result.push_str(&self.lines[self.len() - 1]);
+
+        result
+    }
+
     pub fn get_line(&self, line: usize) -> Result<String, BufferError> {
         self.lines.get(line).map(|s| s.to_string()).ok_or(BufferError::InvalidPosition { line: line, column: 0})
     }

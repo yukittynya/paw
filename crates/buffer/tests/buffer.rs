@@ -78,3 +78,12 @@ fn get_text_multiline() {
     )).unwrap();
     assert_eq!(res, "nya :3\nTesting\nmr");
 }
+
+#[test]
+fn get_buffer() {
+    let buffer1 = Buffer::from_text("Hai");
+    assert_eq!(buffer1.get_buffer(), "Hai");
+
+    let buffer2 = Buffer::from_text("Hai\nTest\nNya\nTest");
+    assert_eq!(buffer2.get_buffer(), "Hai\nTest\nNya\nTest");
+}
