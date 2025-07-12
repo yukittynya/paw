@@ -2,12 +2,13 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use buffer::buffer::Buffer;
-use utils::Position;
+use utils::{Position, Range};
 
 use crate::cursor::Cursor;
 use crate::errors::EditorError;
 
 use uuid::Uuid;
+use crossterm::event::{Event, KeyCode};
 
 #[derive(Debug)]
 pub enum EditorMode {
@@ -17,18 +18,31 @@ pub enum EditorMode {
     Command
 }
 
+impl std::fmt::Display for EditorMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EditorMode::Normal => write!(f, "NORMAL"),
+            EditorMode::Insert => write!(f, "INSERT"),
+            EditorMode::Visual => write!(f, "VISUAL"),
+            EditorMode::Command => write!(f, "COMMAND"),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Editor {
-    buffers: HashMap<Uuid, Buffer>, 
-    current_buffer: Option<Uuid>,
-    cursor: Cursor, 
-    mode: EditorMode
+    pub buffers: HashMap<Uuid, Buffer>, 
+    pub buffer_order: Vec<Uuid>,
+    pub current_buffer: Option<Uuid>,
+    pub cursor: Cursor, 
+    pub mode: EditorMode
 }
 
 impl Editor {
     pub fn new() -> Self {
         Self {
             buffers: HashMap::new(),
+            buffer_order: vec![],
             current_buffer: None,
             cursor: Cursor::new(Position::new(0, 0)),
             mode: EditorMode::Normal
@@ -74,8 +88,111 @@ impl Editor {
         self.current_buffer.and_then(|id| self.buffers.get_mut(&id))
     }
 
+    pub fn get_buffer_display_name(&self, buffer_id: &uuid::Uuid) -> String {
+        if let Some(buffer) = self.buffers.get(buffer_id) {
+            match &buffer.get_path() {
+                Some(path) => path.file_name()
+                    .unwrap_or_else(|| path.as_os_str())
+                    .to_string_lossy()
+                    .into_owned(),
+                None => "Untitled".to_string(),
+            }
+        } else {
+            "Unknown".to_string()
+        }
+    }
+
+    pub fn get_current_buffer_index(&self) -> usize {
+        if let Some(current_id) = self.current_buffer {
+            self.buffer_order.iter().position(|&id| id == current_id).unwrap_or(0)
+        } else {
+            0
+        }
+    }
+
+    pub fn next_buffer(&mut self) {
+        if !self.buffer_order.is_empty() {
+            let current_idx = self.get_current_buffer_index();
+            let next_idx = (current_idx + 1) % self.buffer_order.len();
+            self.current_buffer = Some(self.buffer_order[next_idx]);
+        }
+    }
+
     pub fn change_mode(&mut self, mode: EditorMode) {
         self.mode = mode;
+    }
+
+    pub fn handle_normal_mode_input(&mut self, key: KeyCode) {
+        match key {
+            KeyCode::Char('i') => self.change_mode(EditorMode::Insert),
+            KeyCode::Char('v') => self.change_mode(EditorMode::Visual),
+            KeyCode::Char(':') => self.change_mode(EditorMode::Command),
+            KeyCode::Char('h') => self.move_cursor_left(),
+            KeyCode::Char('j') => self.move_cursor_down(),
+            KeyCode::Char('k') => self.move_cursor_up(),
+            KeyCode::Char('l') => self.move_cursor_right(),
+            KeyCode::Left => self.move_cursor_left(),
+            KeyCode::Down => self.move_cursor_down(),
+            KeyCode::Up => self.move_cursor_up(),
+            KeyCode::Right => self.move_cursor_right(),
+           _ => {} 
+        }
+    }
+
+    pub fn handle_insert_mode_input(&mut self, key: KeyCode) {
+        match key {
+            KeyCode::Esc => self.change_mode(EditorMode::Normal),
+            KeyCode::Backspace => self.backspace(),
+            KeyCode::Enter => self.newline(),
+            KeyCode::Char(c) => {
+                let pos = self.cursor.pos;
+                if let Some(buffer) = self.get_current_buffer_mut() {
+                    match buffer.insert(pos, &c.to_string()) {
+                        Ok(_) => self.move_cursor_right(),
+                        Err(_) => {}
+                    }
+                }
+            },
+            KeyCode::Left => self.move_cursor_left(),
+            KeyCode::Down => self.move_cursor_down(),
+            KeyCode::Up => self.move_cursor_up(),
+            KeyCode::Right => self.move_cursor_right(),
+            _ => {}
+        }
+    }
+
+    pub fn backspace(&mut self) {
+        let pos = self.cursor.pos;
+
+        if pos.column == 0 && pos.line == 0 {
+            return;
+        }
+
+        if let Some(buffer) = self.get_current_buffer_mut() {
+            let _ = buffer.delete(Range::new(
+                Position::new(
+                    pos.line,
+                    pos.column - 1
+                ),
+                Position::new(
+                    pos.line,
+                    pos.column - 1
+                )
+            ));
+
+            self.move_cursor_left();
+        }
+    }
+
+    pub fn newline(&mut self) {
+        let pos = self.cursor.pos;
+
+        if let Some(buffer) = self.get_current_buffer_mut() {
+            match buffer.insert(pos, "\n") {
+                Ok(_) => self.move_cursor_down(),
+                Err(_) => {}
+            }
+        }
     }
 
     pub fn move_cursor_to(&mut self, pos: Position) {
@@ -125,7 +242,7 @@ impl Editor {
                     }
                 }
 
-                self.cursor.pos.line += 1;
+                self.cursor.pos.line -= 1;
             }
         }
     }

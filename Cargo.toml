@@ -13,3 +13,8 @@ members = [
 resolver = "2" 
 
 [dependencies]
+anyhow = "1.0.98"
+crossterm = "0.29.0"
+editor = { path = "crates/editor" }
+ratatui = "0.29.0"
+tui = { path = "crates/tui" }

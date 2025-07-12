@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::io::{Write, BufRead, BufReader};
+
 use std::fs::{File};
 use std::fs;
 
@@ -8,7 +9,7 @@ use crate::errors::BufferError;
 
 #[derive(Debug)]    
 pub struct Buffer {
-    lines: Vec<String>,
+    pub lines: Vec<String>,
     file_path: Option<PathBuf>
 }
 
@@ -179,6 +180,14 @@ impl Buffer {
 
     pub fn get_line(&self, line: usize) -> Result<String, BufferError> {
         self.lines.get(line).map(|s| s.to_string()).ok_or(BufferError::InvalidPosition { line: line, column: 0})
+    }
+
+    pub fn get_path(&self) -> Option<PathBuf> {
+        if let Some(path) = &self.file_path {
+            Some(path.to_path_buf())
+        } else {
+            None
+        }
     }
 
     pub fn len(&self) -> usize {

@@ -1,0 +1,89 @@
+use ratatui::{
+    layout::{self, Constraint, Direction, Layout, Rect},
+    style::{Modifier, Color, Style},
+    text::{Line, Span, Text},
+    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Tabs, Wrap},
+    Frame,
+};
+
+use editor::editor::Editor;
+
+pub fn ui(frame: &mut Frame, editor: &Editor) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3),
+            Constraint::Min(1),
+            Constraint::Length(3)
+        ])
+        .split(frame.area());
+
+    let tab_titles: Vec<String> = editor.buffer_order
+        .iter()
+        .map(|id| editor.get_buffer_display_name(id))
+        .collect();
+
+    let tabs = Tabs::new(tab_titles)
+        .block(Block::default().borders(Borders::ALL).title("Buffers"))
+        .select(editor.get_current_buffer_index())
+        .style(Style::default().fg(Color::White))
+        .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD));
+
+    frame.render_widget(tabs, chunks[0]);
+
+    let content = if let Some(buffer) = editor.get_current_buffer() {
+        let lines: Vec<Line> = buffer.lines
+            .iter()
+            .enumerate()
+            .map(|(line_num, line)| {
+                if line_num == editor.cursor.pos.line {
+                    Line::from(Span::styled(
+                        line.clone(),
+                        Style::default().bg(Color::Rgb(100, 100, 100))
+                    ))
+                } else {
+                    Line::from(line.clone())
+                }
+            })
+            .collect();
+
+        Paragraph::new(lines)
+            .block(Block::default().borders(Borders::ALL).title("paw :3"))
+            .style(Style::default().fg(Color::Black))
+    } else {
+        Paragraph::new("No buffer open")
+            .block(Block::default().borders(Borders::ALL).title("paw :3"))
+            .style(Style::default().fg(Color::Black))
+    };
+
+    frame.render_widget(content, chunks[1]);
+
+    if let Some(buffer) = editor.get_current_buffer() {
+        let cursor_x = chunks[1].x + 1 + editor.cursor.pos.column as u16;
+        let cursor_y = chunks[1].y + 1 + editor.cursor.pos.line as u16;
+        
+        if cursor_x < chunks[1].x + chunks[1].width - 1 && cursor_y < chunks[1].y + chunks[1].height - 1 {
+            frame.set_cursor(cursor_x, cursor_y);
+        }
+    }
+
+    let mode_text = format!("-- {} --", editor.mode);
+    
+    let status_text = if let Some(buffer) = editor.get_current_buffer() {
+        let cursor_info = format!("{}:{}", editor.cursor.pos.line + 1, editor.cursor.pos.column + 1);
+        let file_name = buffer.get_path()
+            .as_ref()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|| "Untitled".to_string());
+        
+        format!("{} | {} | {}", mode_text, file_name, cursor_info)
+    } else {
+        mode_text
+    };
+
+    let status = Paragraph::new(status_text)
+        .block(Block::default().borders(Borders::ALL))
+        .style(Style::default().fg(Color::White).bg(Color::Blue));
+
+    frame.render_widget(status, chunks[2]);
+}
