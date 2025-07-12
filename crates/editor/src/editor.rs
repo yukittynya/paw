@@ -78,6 +78,15 @@ impl Editor {
         self.mode = mode;
     }
 
+    pub fn move_cursor_to(&mut self, pos: Position) {
+        if let Some(buffer) = self.get_current_buffer() {
+            match buffer.validate_position(pos) {
+                Ok(_) => self.cursor.pos = pos,
+                Err(_) => {}
+            }
+        }
+    }
+
     pub fn move_cursor_left(&mut self) {
         if let Some(buffer) = self.get_current_buffer() {
             if self.cursor.pos.column == 0 && self.cursor.pos.line > 0 {
