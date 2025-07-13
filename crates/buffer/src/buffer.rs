@@ -70,6 +70,16 @@ impl Buffer {
     pub fn insert(&mut self, pos: Position, text: &str) -> Result<(), BufferError> {
         self.validate_position(pos)?;
 
+        if text == "\n" {
+            let current = &self.lines[pos.line].clone();
+            let before = current[..pos.column].to_string();
+            let after = current[pos.column..].to_string();
+
+            self.lines[pos.line] = before;
+            self.lines.insert(pos.line + 1, after);
+            return Ok(());
+        }
+
         let lines: Vec<&str> = text.lines().collect();
         if lines.is_empty() {
             return Ok(());

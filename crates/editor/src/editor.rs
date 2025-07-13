@@ -189,7 +189,7 @@ impl Editor {
 
         if let Some(buffer) = self.get_current_buffer_mut() {
             match buffer.insert(pos, "\n") {
-                Ok(_) => self.move_cursor_down(),
+                Ok(_) => self.move_cursor_to(Position::new(pos.line + 1, 0)),
                 Err(_) => {}
             }
         }
@@ -226,9 +226,9 @@ impl Editor {
                     if self.cursor.pos.column > line.len() {
                         self.cursor.pos.column = line.len();
                     }
-                }
 
-                self.cursor.pos.line += 1;
+                    self.cursor.pos.line += 1;
+                }
             }
         }
     }
@@ -251,8 +251,10 @@ impl Editor {
         if let Some(buffer) = self.get_current_buffer() {
             if let Ok(line) = buffer.get_line(self.cursor.pos.line) {
                 if self.cursor.pos.column == line.len() && self.cursor.pos.line < buffer.len() {
-                    self.cursor.pos.line += 1;
-                    self.cursor.pos.column = 0;
+                    if buffer.get_line(self.cursor.pos.line + 1).is_ok() {
+                        self.cursor.pos.line += 1;
+                        self.cursor.pos.column = 0;
+                    }
                 } else if self.cursor.pos.column < line.len() {
                     self.cursor.pos.column += 1;
                 } 
