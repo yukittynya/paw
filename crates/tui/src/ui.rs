@@ -1,8 +1,9 @@
 use ratatui::{
+    prelude::{Position},
     layout::{self, Constraint, Direction, Layout, Alignment},
     style::{Modifier, Color, Style},
     text::{Line, Span, Text},
-    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Tabs, Wrap},
+    widgets::{Block, Borders, Padding, Clear, List, ListItem, Paragraph, Tabs, Wrap},
     Frame,
 };
 
@@ -61,7 +62,7 @@ pub fn ui(frame: &mut Frame, editor: &Editor) {
             .collect();
 
         let line_numbers_column = Paragraph::new(line_numbers)
-            .block(Block::default().borders(Borders::ALL))
+            .block(Block::default().borders(Borders::NONE).padding(Padding::new(1, 1, 1, 1)))
             .alignment(Alignment::Right);
         
         frame.render_widget(line_numbers_column, editor_chunks[0]);
@@ -82,12 +83,12 @@ pub fn ui(frame: &mut Frame, editor: &Editor) {
             .collect();
 
         Paragraph::new(lines)
-            .block(Block::default().borders(Borders::ALL).title("paw :3"))
+            .block(Block::default().borders(Borders::NONE).padding(Padding::new(1, 1, 1, 1)))
             .style(Style::default().fg(Color::White))
-            .wrap(Wrap { trim: true })
+            .wrap(Wrap { trim: false })
     } else {
         Paragraph::new("No buffer open")
-            .block(Block::default().borders(Borders::ALL).title("paw :3"))
+            .block(Block::default().borders(Borders::NONE).title("paw :3"))
             .style(Style::default().fg(Color::White))
     };
 
@@ -98,7 +99,7 @@ pub fn ui(frame: &mut Frame, editor: &Editor) {
         let cursor_y = editor_chunks[1].y + 1 + editor.cursor.pos.line as u16;
         
         if cursor_x < editor_chunks[1].x + editor_chunks[1].width - 1 && cursor_y < editor_chunks[1].y + editor_chunks[1].height - 1 {
-            frame.set_cursor(cursor_x, cursor_y);
+            frame.set_cursor_position(Position::new(cursor_x, cursor_y));
         }
     }
 

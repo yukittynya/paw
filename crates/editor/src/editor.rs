@@ -157,6 +157,7 @@ impl Editor {
             KeyCode::Esc => self.change_mode(EditorMode::Normal),
             KeyCode::Backspace => self.backspace(),
             KeyCode::Enter => self.newline(),
+            KeyCode::Tab => self.indent(),
             KeyCode::Char(c) => {
                 let pos = self.cursor.pos;
                 if let Some(buffer) = self.get_current_buffer_mut() {
@@ -235,6 +236,21 @@ impl Editor {
         if let Some(buffer) = self.get_current_buffer_mut() {
             match buffer.insert(pos, "\n") {
                 Ok(_) => self.move_cursor_to(Position::new(pos.line + 1, 0)),
+                Err(_) => {}
+            }
+        }
+    }
+
+    pub fn indent(&mut self) {
+        let pos = self.cursor.pos;
+
+        if let Some(buffer) = self.get_current_buffer_mut() {
+            //REPLACE WITH TAB WIDTH FROM CONFIG
+            let count = 4 - (pos.column % 4);
+            let indent = " ".repeat(count);
+
+            match buffer.insert(pos, &indent) {
+                Ok(_) => {self.move_cursor_to(Position::new(pos.line, pos.column + count))}
                 Err(_) => {}
             }
         }

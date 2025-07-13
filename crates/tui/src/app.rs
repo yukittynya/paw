@@ -1,4 +1,4 @@
-use crossterm::event::{self, Event, KeyEventKind, KeyCode};
+use crossterm::{cursor::SetCursorStyle, event::{self, Event, KeyCode, KeyEventKind}, execute};
 use ratatui::prelude::Backend;
 use ratatui::Terminal;
 
@@ -9,8 +9,28 @@ use editor::editor::{Editor, EditorMode};
 use crate::ui::ui;
 
 pub fn run_editor<B: Backend>(terminal: &mut Terminal<B>, editor: &mut Editor) -> io::Result<bool> {
+    let mut stdout = io::stdout();
+
     loop {
         terminal.draw(|f| ui(f, editor))?;
+
+        match editor.mode {
+            EditorMode::Normal => {
+                execute!(stdout, SetCursorStyle::SteadyBlock)?;
+            },
+
+            EditorMode::Insert => {
+                execute!(stdout, SetCursorStyle::SteadyBar)?;
+            },
+
+            EditorMode::Visual => {
+                execute!(stdout, SetCursorStyle::SteadyBlock)?;
+            },
+
+            EditorMode::Command => {
+                execute!(stdout, SetCursorStyle::SteadyBlock)?;
+            }
+        }
 
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Release {

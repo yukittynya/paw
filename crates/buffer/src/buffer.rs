@@ -205,7 +205,7 @@ impl Buffer {
     }
 
     pub fn validate_position(&self, pos: Position) -> Result<(), BufferError> {
-        if pos.line > self.len() {
+        if pos.line >= self.len() {
             return Err(BufferError::InvalidPosition { 
                 line: pos.line, 
                 column: pos.column
