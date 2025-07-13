@@ -21,7 +21,6 @@ fn main() -> Result<()>{
     let mut terminal = Terminal::new(backend)?;
 
     let file = env::args().nth(1).expect("nope");
-    //let file2 = env::args().nth(2).expect("nope");
 
     let mut editor = Editor::new();
     editor.create_buffer_from_file(file.into());

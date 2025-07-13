@@ -1,5 +1,5 @@
 use ratatui::{
-    layout::{self, Constraint, Direction, Layout, Rect},
+    layout::{self, Constraint, Direction, Layout, Alignment},
     style::{Modifier, Color, Style},
     text::{Line, Span, Text},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Tabs, Wrap},
@@ -31,7 +31,41 @@ pub fn ui(frame: &mut Frame, editor: &Editor) {
 
     frame.render_widget(tabs, chunks[0]);
 
+    let editor_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Length(6),
+            Constraint::Min(1)
+        ])
+        .split(chunks[1]);
+
     let content = if let Some(buffer) = editor.get_current_buffer() {
+        let line_numbers: Vec<Line> = buffer.lines 
+            .iter()
+            .enumerate()
+            .map(|(i, _)| {
+                let line_num = i + 1;
+                
+                if i == editor.cursor.pos.line {
+                    Line::from(Span::styled(
+                        format!("{:>4}", line_num), 
+                        Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                    ))
+                } else {
+                    Line::from(Span::styled(
+                        format!("{:>4}", line_num),
+                        Style::default().fg(Color::Rgb(150, 150, 150))
+                    ))
+                }
+            })
+            .collect();
+
+        let line_numbers_column = Paragraph::new(line_numbers)
+            .block(Block::default().borders(Borders::ALL))
+            .alignment(Alignment::Right);
+        
+        frame.render_widget(line_numbers_column, editor_chunks[0]);
+
         let lines: Vec<Line> = buffer.lines
             .iter()
             .enumerate()
@@ -57,13 +91,13 @@ pub fn ui(frame: &mut Frame, editor: &Editor) {
             .style(Style::default().fg(Color::White))
     };
 
-    frame.render_widget(content, chunks[1]);
+    frame.render_widget(content, editor_chunks[1]);
 
     if let Some(buffer) = editor.get_current_buffer() {
-        let cursor_x = chunks[1].x + 1 + editor.cursor.pos.column as u16;
-        let cursor_y = chunks[1].y + 1 + editor.cursor.pos.line as u16;
+        let cursor_x = editor_chunks[1].x + 1 + editor.cursor.pos.column as u16;
+        let cursor_y = editor_chunks[1].y + 1 + editor.cursor.pos.line as u16;
         
-        if cursor_x < chunks[1].x + chunks[1].width - 1 && cursor_y < chunks[1].y + chunks[1].height - 1 {
+        if cursor_x < editor_chunks[1].x + editor_chunks[1].width - 1 && cursor_y < editor_chunks[1].y + editor_chunks[1].height - 1 {
             frame.set_cursor(cursor_x, cursor_y);
         }
     }
