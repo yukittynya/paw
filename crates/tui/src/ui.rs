@@ -24,10 +24,10 @@ pub fn ui(frame: &mut Frame, editor: &Editor) {
         .collect();
 
     let tabs = Tabs::new(tab_titles)
-        .block(Block::default().borders(Borders::ALL).title("Buffers"))
+        .block(Block::default().borders(Borders::ALL).title("Files"))
         .select(editor.get_current_buffer_index())
-        .style(Style::default().fg(Color::White))
-        .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD));
+        .style(Style::default().fg(Color::Yellow))
+        .highlight_style(Style::default().fg(Color::White).add_modifier(Modifier::BOLD));
 
     frame.render_widget(tabs, chunks[0]);
 
@@ -39,7 +39,7 @@ pub fn ui(frame: &mut Frame, editor: &Editor) {
                 if line_num == editor.cursor.pos.line {
                     Line::from(Span::styled(
                         line.clone(),
-                        Style::default().bg(Color::Rgb(100, 100, 100))
+                        Style::default().bg(Color::Rgb(50, 50, 50))
                     ))
                 } else {
                     Line::from(line.clone())
@@ -49,12 +49,12 @@ pub fn ui(frame: &mut Frame, editor: &Editor) {
 
         Paragraph::new(lines)
             .block(Block::default().borders(Borders::ALL).title("paw :3"))
-            .style(Style::default().fg(Color::Black))
+            .style(Style::default().fg(Color::White))
             .wrap(Wrap { trim: true })
     } else {
         Paragraph::new("No buffer open")
             .block(Block::default().borders(Borders::ALL).title("paw :3"))
-            .style(Style::default().fg(Color::Black))
+            .style(Style::default().fg(Color::White))
     };
 
     frame.render_widget(content, chunks[1]);
@@ -84,7 +84,7 @@ pub fn ui(frame: &mut Frame, editor: &Editor) {
 
     let status = Paragraph::new(status_text)
         .block(Block::default().borders(Borders::ALL))
-        .style(Style::default().fg(Color::White).bg(Color::Blue));
+        .style(Style::default().fg(Color::White));
 
     frame.render_widget(status, chunks[2]);
 }

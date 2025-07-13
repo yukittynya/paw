@@ -33,6 +33,7 @@ impl std::fmt::Display for EditorMode {
 pub struct Editor {
     pub buffers: HashMap<Uuid, Buffer>, 
     pub buffer_order: Vec<Uuid>,
+    pub buffer_cursor_pos: HashMap<Uuid, Position>,
     pub current_buffer: Option<Uuid>,
     pub cursor: Cursor, 
     pub mode: EditorMode
@@ -43,6 +44,7 @@ impl Editor {
         Self {
             buffers: HashMap::new(),
             buffer_order: vec![],
+            buffer_cursor_pos: HashMap::new(),
             current_buffer: None,
             cursor: Cursor::new(Position::new(0, 0)),
             mode: EditorMode::Normal
@@ -54,6 +56,8 @@ impl Editor {
         let buffer = Buffer::new();
 
         self.buffers.insert(id, buffer);
+        self.buffer_order.push(id);
+        self.buffer_cursor_pos.insert(id, self.cursor.pos);
 
         if self.current_buffer.is_none() {
             self.current_buffer = Some(id);
@@ -65,6 +69,8 @@ impl Editor {
         let buffer = Buffer::from_file(&path);
 
         self.buffers.insert(id, buffer);
+        self.buffer_order.push(id);
+        self.buffer_cursor_pos.insert(id, self.cursor.pos);
 
         if self.current_buffer.is_none() {
             self.current_buffer = Some(id);
@@ -111,11 +117,16 @@ impl Editor {
     }
 
     pub fn next_buffer(&mut self) {
+        if let Some(key) = self.buffer_cursor_pos.get_mut(&self.current_buffer.unwrap()) {
+            *key = self.cursor.pos;
+        }
+
         if !self.buffer_order.is_empty() {
             let current_idx = self.get_current_buffer_index();
             let next_idx = (current_idx + 1) % self.buffer_order.len();
 
             self.current_buffer = Some(self.buffer_order[next_idx]);
+            self.cursor.pos = *self.buffer_cursor_pos.get(&self.current_buffer.unwrap()).unwrap();
         }
     }
 
