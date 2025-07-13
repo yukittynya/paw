@@ -143,6 +143,8 @@ impl Editor {
             KeyCode::Char('j') => self.move_cursor_down(),
             KeyCode::Char('k') => self.move_cursor_up(),
             KeyCode::Char('l') => self.move_cursor_right(),
+            KeyCode::Char('W') => self.jump_to_next_word_after_space(),
+            //KeyCode::Char('w') => self.jump_to_next_different_char(),
             KeyCode::Left => self.move_cursor_left(),
             KeyCode::Down => self.move_cursor_down(),
             KeyCode::Up => self.move_cursor_up(),
@@ -162,7 +164,13 @@ impl Editor {
                 let pos = self.cursor.pos;
                 if let Some(buffer) = self.get_current_buffer_mut() {
                     match buffer.insert(pos, &c.to_string()) {
-                        Ok(_) => self.move_cursor_right(),
+                        Ok(_) => {
+                            self.move_cursor_right();
+
+                            if c == '(' || c == '{' || c == '[' {
+                                self.auto_paren(c); 
+                            }
+                        },
                         Err(_) => {}
                     }
                 }
@@ -245,7 +253,6 @@ impl Editor {
         let pos = self.cursor.pos;
 
         if let Some(buffer) = self.get_current_buffer_mut() {
-            //REPLACE WITH TAB WIDTH FROM CONFIG
             let count = 4 - (pos.column % 4);
             let indent = " ".repeat(count);
 
@@ -263,6 +270,32 @@ impl Editor {
                 Err(_) => {}
             }
         }
+    }
+    
+    pub fn auto_paren(&mut self, left_paren: char) {
+        let pos = self.cursor.pos;
+
+        if let Some(buffer) = self.get_current_buffer_mut() {
+            match left_paren {
+                '(' => {
+                    let _ = buffer.insert(pos, ")");
+                }
+
+                '[' => {
+                    let _ = buffer.insert(pos, "]");
+                }
+
+                '{' => {
+                    let _ = buffer.insert(pos, "}");
+                }
+
+                _ => {}
+            }  
+        }
+    }
+    
+    pub fn jump_to_next_word_after_space(&mut self) {
+         
     }
 
     pub fn move_cursor_left(&mut self) {

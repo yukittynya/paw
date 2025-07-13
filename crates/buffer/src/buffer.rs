@@ -43,9 +43,23 @@ impl Buffer {
             } 
 
             let _ = File::create(path);
+
+            return Self {
+                lines: vec![String::new()],
+                file_path: Some(path.to_path_buf())
+            };
         }
 
         let file = File::open(path).expect("Error opening file");
+        let metadata = file.metadata().expect("No metadata");
+
+        if metadata.is_file() && metadata.len() == 0 {
+            return Self {
+                lines: vec![String::new()],
+                file_path: Some(path.to_path_buf())
+            };
+        }
+
         let buf = BufReader::new(file);
         let lines: Vec<String> = buf.lines().map(|line| line.expect("Error parsing line")).collect();
 

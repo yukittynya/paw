@@ -62,7 +62,7 @@ pub fn ui(frame: &mut Frame, editor: &Editor) {
             .collect();
 
         let line_numbers_column = Paragraph::new(line_numbers)
-            .block(Block::default().borders(Borders::NONE).padding(Padding::new(1, 1, 1, 1)))
+            .block(Block::default().borders(Borders::NONE).padding(Padding::new(0, 1, 1, 1)))
             .alignment(Alignment::Right);
         
         frame.render_widget(line_numbers_column, editor_chunks[0]);
@@ -70,15 +70,8 @@ pub fn ui(frame: &mut Frame, editor: &Editor) {
         let lines: Vec<Line> = buffer.lines
             .iter()
             .enumerate()
-            .map(|(line_num, line)| {
-                if line_num == editor.cursor.pos.line {
-                    Line::from(Span::styled(
-                        line.clone(),
-                        Style::default().bg(Color::Rgb(50, 50, 50))
-                    ))
-                } else {
-                    Line::from(line.clone())
-                }
+            .map(|(_, line)| {
+                Line::from(line.clone())
             })
             .collect();
 
@@ -118,7 +111,7 @@ pub fn ui(frame: &mut Frame, editor: &Editor) {
     };
 
     let status = Paragraph::new(status_text)
-        .block(Block::default().borders(Borders::ALL))
+        .block(Block::default().borders(Borders::NONE))
         .style(Style::default().fg(Color::White));
 
     frame.render_widget(status, chunks[2]);
