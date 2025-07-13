@@ -50,6 +50,7 @@ pub fn ui(frame: &mut Frame, editor: &Editor) {
         Paragraph::new(lines)
             .block(Block::default().borders(Borders::ALL).title("paw :3"))
             .style(Style::default().fg(Color::Black))
+            .wrap(Wrap { trim: true })
     } else {
         Paragraph::new("No buffer open")
             .block(Block::default().borders(Borders::ALL).title("paw :3"))

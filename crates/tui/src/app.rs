@@ -30,6 +30,13 @@ pub fn run_editor<B: Backend>(terminal: &mut Terminal<B>, editor: &mut Editor) -
                     editor.handle_insert_mode_input(key.code);
                 },
 
+                EditorMode::Visual => {
+                    editor.handle_visual_mode_input(key.code);
+                },
+
+                EditorMode::Command => {
+                    editor.handle_command_mode_input(key.code);
+                },
                 _ => {}
             }
         }

@@ -8,7 +8,7 @@ use crate::cursor::Cursor;
 use crate::errors::EditorError;
 
 use uuid::Uuid;
-use crossterm::event::{Event, KeyCode};
+use crossterm::event::{KeyCode};
 
 #[derive(Debug)]
 pub enum EditorMode {
@@ -88,7 +88,7 @@ impl Editor {
         self.current_buffer.and_then(|id| self.buffers.get_mut(&id))
     }
 
-    pub fn get_buffer_display_name(&self, buffer_id: &uuid::Uuid) -> String {
+    pub fn get_buffer_display_name(&self, buffer_id: &Uuid) -> String {
         if let Some(buffer) = self.buffers.get(buffer_id) {
             match &buffer.get_path() {
                 Some(path) => path.file_name()
@@ -114,6 +114,7 @@ impl Editor {
         if !self.buffer_order.is_empty() {
             let current_idx = self.get_current_buffer_index();
             let next_idx = (current_idx + 1) % self.buffer_order.len();
+
             self.current_buffer = Some(self.buffer_order[next_idx]);
         }
     }
@@ -135,7 +136,8 @@ impl Editor {
             KeyCode::Down => self.move_cursor_down(),
             KeyCode::Up => self.move_cursor_up(),
             KeyCode::Right => self.move_cursor_right(),
-           _ => {} 
+            KeyCode::Tab => self.next_buffer(),
+            _ => {} 
         }
     }
 
@@ -161,6 +163,20 @@ impl Editor {
         }
     }
 
+    pub fn handle_visual_mode_input(&mut self, key: KeyCode) {
+        match key {
+            KeyCode::Esc => self.change_mode(EditorMode::Normal),
+            _ => {}
+        }
+    }
+
+    pub fn handle_command_mode_input(&mut self, key: KeyCode) {
+        match key {
+            KeyCode::Esc => self.change_mode(EditorMode::Normal),
+            _ => {}
+        }
+    }
+
     pub fn backspace(&mut self) {
         let pos = self.cursor.pos;
 
@@ -169,18 +185,36 @@ impl Editor {
         }
 
         if let Some(buffer) = self.get_current_buffer_mut() {
-            let _ = buffer.delete(Range::new(
-                Position::new(
-                    pos.line,
-                    pos.column - 1
-                ),
-                Position::new(
-                    pos.line,
-                    pos.column - 1
-                )
-            ));
+            if pos.column == 0 {
+                if let Ok(current_line) = buffer.get_line(pos.line) {
+                    let current_line_content = current_line.clone();
 
-            self.move_cursor_left();
+                    if current_line_content.is_empty() {
+                        buffer.lines.remove(pos.line);
+
+                        if let Ok(prev_line) = buffer.get_line(pos.line - 1) {
+                            self.move_cursor_to(Position::new(pos.line - 1, prev_line.len()));
+                        }
+                    } else {
+                        if let Ok(prev_line) = buffer.get_line(pos.line - 1) {
+                            let prev_line_len = prev_line.len();
+                            let joined = prev_line.clone() + &current_line_content;
+
+                            buffer.lines[pos.line - 1] = joined;
+                            buffer.lines.remove(pos.line);
+
+                            self.move_cursor_to(Position::new(pos.line - 1, prev_line_len));
+                        }
+                    }
+                }
+            } else {
+                let _ = buffer.delete(Range::new(
+                    Position::new(pos.line, pos.column - 1),
+                    Position::new(pos.line, pos.column - 1)
+                ));
+
+                self.move_cursor_left();
+            }
         }
     }
 
